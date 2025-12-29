@@ -4,6 +4,7 @@ document.querySelector('#app').innerHTML = `
   <div>
     <header>
       <h1><p>뉴스스탠드</p></h1>
+      <p>2025.12.29. 월요일</p> 
     </header>
     <section>
       <div> 
@@ -16,6 +17,12 @@ document.querySelector('#app').innerHTML = `
       </div>
     </section>
     <section>
+      <section>
+        <div>
+          <button><span>전체 언론사</span></button>
+          <button><span>내가 구독한 언론사</span><span>0</span></button>
+        </div>
+      </section>
       <table>
         <tr> 
           <td>서울경제</td> 
