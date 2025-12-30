@@ -13,7 +13,6 @@ let currentFilter = "all";
 let currentView = "grid";
 let subscribedNews = new Set();
 let currentPage = 0;
-let paginationInstance = null;
 
 export default function newsFeed() {
   return /* html */ `
@@ -55,7 +54,7 @@ export async function initNewsFeed(container) {
     handleViewChange(container);
   });
 
-  paginationInstance = setupPagination(container, paginatedData, (newsData, newPage) => {
+  setupPagination(container, paginatedData, (newsData, newPage) => {
     currentPage = newPage;
     renderView(container, newsData);
   }, currentPage);
@@ -133,7 +132,7 @@ function handleSubscribeChange(container, filter) {
     const pageData = paginatedData[currentPage] || [];
     renderView(container, pageData);
 
-    paginationInstance = setupPagination(container, paginatedData, (newsData, newPage) => {
+    setupPagination(container, paginatedData, (newsData, newPage) => {
       currentPage = newPage;
       renderView(container, newsData);
     }, currentPage);
@@ -158,7 +157,7 @@ function handleFilterChange(container, filter) {
   const pageData = paginatedData[0] || [];
   renderView(container, pageData);
 
-  paginationInstance = setupPagination(container, paginatedData, (newsData, newPage) => {
+  setupPagination(container, paginatedData, (newsData, newPage) => {
     currentPage = newPage;
     renderView(container, newsData);
   }, currentPage);

@@ -29,7 +29,7 @@ export default function setupPagination(
     }
   };
 
-  const handleClick = (e) => {
+  container.addEventListener("click", (e) => {
     const arrow = e.target.closest(".pagination-arrow");
     if (!arrow || arrow.disabled) return;
 
@@ -38,15 +38,7 @@ export default function setupPagination(
     } else if (arrow.classList.contains("next")) {
       goToPage(currentPage + 1);
     }
-  };
-
-  const oldHandler = container._paginationHandler;
-  if (oldHandler) {
-    container.removeEventListener("click", oldHandler);
-  }
-
-  container.addEventListener("click", handleClick);
-  container._paginationHandler = handleClick;
+  });
 
   updateButtons();
 
