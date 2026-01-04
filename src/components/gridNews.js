@@ -8,12 +8,10 @@ export default function gridNews(
 ) {
   const totalCells = 24;
 
-  const items = Array.isArray(newsItems) ? newsItems : [];
-
-  const paddedNews = [...items];
-  while (paddedNews.length < totalCells) {
-    paddedNews.push(null);
-  }
+  const paddedNews = [
+    ...newsItems,
+    ...Array(Math.max(0, totalCells - newsItems.length)).fill(null),
+  ];
 
   return /* html */ `
     <div class="grid-pagination-wrapper">

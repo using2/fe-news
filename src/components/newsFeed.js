@@ -1,10 +1,15 @@
 import newsFilter from "./newsFilter.js";
 import gridNews from "./gridNews.js";
 import listNews from "./listNews.js";
-import setupFilter from "../setup/setupFilter.js";
-import setupViewToggle from "../setup/setupViewToggle.js";
-import setupPagination from "../setup/setupPagination.js";
-import setupSubscribe from "../setup/setupSubscribe.js";
+import setupFilter, { updateFilterUI } from "../setup/setupFilter.js";
+import setupViewToggle, { updateViewUI } from "../setup/setupViewToggle.js";
+import setupPagination, {
+  updatePaginationUI,
+} from "../setup/setupPagination.js";
+import setupSubscribe, {
+  loadSubscribedNews,
+  saveSubscribedNews,
+} from "../setup/setupSubscribe.js";
 import { loadNewsData, paginateNews } from "../utils/newsDataManager.js";
 
 let allNewsData = [];
@@ -13,6 +18,12 @@ let currentFilter = "all";
 let currentView = "grid";
 let subscribedNews = new Set();
 let currentPage = 0;
+
+let cachedDOM = {
+  container: null,
+  filterContainer: null,
+  gridContainer: null,
+};
 
 export default function newsFeed() {
   return /* html */ `
@@ -26,141 +37,142 @@ export default function newsFeed() {
 }
 
 export async function initNewsFeed(container) {
+  await loadInitialData();
+  subscribedNews = loadSubscribedNews();
+
+  cachedDOM.container = container;
+  cachedDOM.filterContainer = container.querySelector(".news-filter-container");
+  cachedDOM.gridContainer = container.querySelector("#grid-container");
+
+  renderCurrentPage();
+  setupAllEventListeners();
+  updateAllUI();
+}
+
+async function loadInitialData() {
   allNewsData = await loadNewsData("/pressData.json");
   paginatedData = paginateNews(allNewsData, 24);
-
-  const { subscribedNews: savedSubs } = setupSubscribe(
-    container,
-    (updatedSubs, filter) => {
-      subscribedNews = updatedSubs;
-      handleSubscribeChange(container, filter);
-    }
-  );
-
-  subscribedNews = savedSubs;
-
-  renderView(container, paginatedData[0]);
-  updateFilterBar(container);
-
-  const filterContainer = container.querySelector(".news-filter-container");
-  
-  setupFilter(filterContainer, (newFilter) => {
-    currentFilter = newFilter;
-    handleFilterChange(container, newFilter);
-  });
-
-  setupViewToggle(filterContainer, (newView) => {
-    currentView = newView;
-    handleViewChange(container);
-  });
-
-  setupPagination(container, paginatedData, (newsData, newPage) => {
-    currentPage = newPage;
-    renderView(container, newsData);
-  }, currentPage);
 }
 
-function updateFilterBar(container) {
-  const filterContainer = container.querySelector('.news-filter-container');
-  
-  if (filterContainer) {
-    const newFilterBar = newsFilter(currentFilter, currentView, subscribedNews.size);
-    filterContainer.outerHTML = newFilterBar;
-    
-    const newFilterContainer = container.querySelector(".news-filter-container");
-    
-    setupFilter(newFilterContainer, (newFilter) => {
-      currentFilter = newFilter;
-      handleFilterChange(container, newFilter);
-    });
-
-    setupViewToggle(newFilterContainer, (newView) => {
-      currentView = newView;
-      handleViewChange(container);
-    });
-  }
+function setupAllEventListeners() {
+  setupFilter(cachedDOM.filterContainer, handleFilterChange);
+  setupViewToggle(cachedDOM.filterContainer, handleViewChange);
+  setupPagination(cachedDOM.container, handlePageChange);
+  setupSubscribe(cachedDOM.container, handleSubscribeChange);
 }
 
-function renderView(container, newsData) {
-  const gridContainer = container.querySelector("#grid-container");
-
-  if (!Array.isArray(newsData)) {
-    newsData = [];
-  }
-
-  if (currentView === 'grid') {
-    gridContainer.innerHTML = gridNews(newsData, subscribedNews, currentFilter);
-  } else {
-    gridContainer.innerHTML = listNews(newsData, subscribedNews, currentFilter);
-  }
-  
-  const paginationArrows = container.querySelectorAll('.pagination-arrow');
-  paginationArrows.forEach(arrow => {
-    if (currentView === 'grid') {
-      arrow.style.display = 'flex';
-    } else {
-      arrow.style.display = 'none';
-    }
-  });
-}
-
-function handleViewChange(container) {
-  const pageData = paginatedData[currentPage] || [];
-  renderView(container, pageData);
-}
-
-function handleSubscribeChange(container, filter) {
-  if (filter === "favorite") {
-    const allItems = paginatedData.flat();
-    
-    const filteredItems = allItems.filter((item) => {
-      return item && subscribedNews.has(item.press);
-    });
-    
-    const pageSize = 24;
-    const newPaginatedData = [];
-    for (let i = 0; i < filteredItems.length; i += pageSize) {
-      newPaginatedData.push(filteredItems.slice(i, i + pageSize));
-    }
-    
-    if (currentPage >= newPaginatedData.length && newPaginatedData.length > 0) {
-      currentPage = newPaginatedData.length - 1;
-    }
-    
-    paginatedData = newPaginatedData;
-    
-    const pageData = paginatedData[currentPage] || [];
-    renderView(container, pageData);
-
-    setupPagination(container, paginatedData, (newsData, newPage) => {
-      currentPage = newPage;
-      renderView(container, newsData);
-    }, currentPage);
-  } else {
-    const pageData = paginatedData[currentPage] || [];
-    renderView(container, pageData);
-  }
-  
-  updateFilterBar(container);
-}
-
-function handleFilterChange(container, filter) {
-  let filteredData = allNewsData;
-
-  if (filter === "favorite") {
-    filteredData = allNewsData.filter((item) => subscribedNews.has(item.press));
-  }
-
-  paginatedData = paginateNews(filteredData, 24);
+function handleFilterChange(newFilter) {
+  currentFilter = newFilter;
   currentPage = 0;
 
-  const pageData = paginatedData[0] || [];
-  renderView(container, pageData);
+  const filteredData = getFilteredData(currentFilter);
+  paginatedData = paginateNews(filteredData, 24);
 
-  setupPagination(container, paginatedData, (newsData, newPage) => {
+  renderCurrentPage();
+  updateAllUI();
+}
+
+function handleViewChange(newView) {
+  currentView = newView;
+
+  renderCurrentPage();
+  updateViewUI(cachedDOM.filterContainer, currentView);
+  updatePaginationArrowsVisibility();
+}
+
+function handlePageChange(direction) {
+  const newPage = direction === "prev" ? currentPage - 1 : currentPage + 1;
+
+  if (newPage >= 0 && newPage < paginatedData.length) {
     currentPage = newPage;
-    renderView(container, newsData);
-  }, currentPage);
-  
-  updateFilterBar(container);
+    renderCurrentPage();
+    updatePaginationUI(cachedDOM.container, currentPage, paginatedData.length);
+  }
+}
+
+function handleSubscribeChange(press, filter) {
+  if (subscribedNews.has(press)) {
+    subscribedNews.delete(press);
+  } else {
+    subscribedNews.add(press);
+  }
+
+  saveSubscribedNews(subscribedNews);
+
+  if (filter === "favorite") {
+    repaginateForFavorites();
+  }
+
+  renderCurrentPage();
+  updateAllUI();
+}
+
+function renderCurrentPage() {
+  const pageData = paginatedData[currentPage] || [];
+  const validNewsData = Array.isArray(pageData) ? pageData : [];
+
+  cachedDOM.gridContainer.innerHTML =
+    currentView === "grid"
+      ? gridNews(validNewsData, subscribedNews, currentFilter)
+      : listNews(validNewsData, subscribedNews, currentFilter);
+}
+
+function updateAllUI() {
+  updateFilterBar();
+  updatePaginationUI(cachedDOM.container, currentPage, paginatedData.length);
+  updatePaginationArrowsVisibility();
+}
+
+function updateFilterBar() {
+  if (!cachedDOM.filterContainer) return;
+
+  const newFilterBar = newsFilter(
+    currentFilter,
+    currentView,
+    subscribedNews.size
+  );
+  cachedDOM.filterContainer.outerHTML = newFilterBar;
+
+  cachedDOM.filterContainer = cachedDOM.container.querySelector(
+    ".news-filter-container"
+  );
+
+  setupFilter(cachedDOM.filterContainer, handleFilterChange);
+  setupViewToggle(cachedDOM.filterContainer, handleViewChange);
+
+  updateFilterUI(cachedDOM.filterContainer, currentFilter);
+  updateViewUI(cachedDOM.filterContainer, currentView);
+}
+
+function updatePaginationArrowsVisibility() {
+  const paginationArrows =
+    cachedDOM.container.querySelectorAll(".pagination-arrow");
+  const displayValue = currentView === "grid" ? "flex" : "none";
+
+  paginationArrows.forEach((arrow) => {
+    arrow.style.display = displayValue;
+  });
+}
+
+function repaginateForFavorites() {
+  const allItems = paginatedData.flat();
+  const filteredItems = allItems.filter(
+    (item) => item && subscribedNews.has(item.press)
+  );
+
+  const pageSize = 24;
+  paginatedData = Array.from(
+    { length: Math.ceil(filteredItems.length / pageSize) },
+    (_, i) => filteredItems.slice(i * pageSize, (i + 1) * pageSize)
+  );
+
+  if (currentPage >= paginatedData.length && paginatedData.length > 0) {
+    currentPage = paginatedData.length - 1;
+  }
+}
+
+function getFilteredData(filter) {
+  return filter === "favorite"
+    ? allNewsData.filter((item) => subscribedNews.has(item.press))
+    : allNewsData;
 }

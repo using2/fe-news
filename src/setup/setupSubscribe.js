@@ -1,27 +1,4 @@
 export default function setupSubscribe(container, onSubscribeChange) {
-  const savedSubscriptions = localStorage.getItem("subscribedNews");
-  let subscribedNews = savedSubscriptions
-    ? new Set(JSON.parse(savedSubscriptions))
-    : new Set();
-
-  const saveSubscriptions = () => {
-    localStorage.setItem("subscribedNews", JSON.stringify([...subscribedNews]));
-  };
-
-  const toggleSubscribe = (press, currentFilter) => {
-    if (subscribedNews.has(press)) {
-      subscribedNews.delete(press);
-    } else {
-      subscribedNews.add(press);
-    }
-
-    saveSubscriptions();
-
-    if (onSubscribeChange) {
-      onSubscribeChange(subscribedNews, currentFilter);
-    }
-  };
-
   container.addEventListener("click", (e) => {
     const subscribeBtn = e.target.closest(".subscribe-btn");
 
@@ -31,12 +8,18 @@ export default function setupSubscribe(container, onSubscribeChange) {
 
       const press = subscribeBtn.dataset.press;
       const currentFilter = subscribeBtn.dataset.filter || "all";
-      toggleSubscribe(press, currentFilter);
+      onSubscribeChange(press, currentFilter);
     }
   });
+}
 
-  return {
-    subscribedNews,
-    toggleSubscribe,
-  };
+export function loadSubscribedNews() {
+  const savedSubscriptions = localStorage.getItem("subscribedNews");
+  return savedSubscriptions
+    ? new Set(JSON.parse(savedSubscriptions))
+    : new Set();
+}
+
+export function saveSubscribedNews(subscribedNews) {
+  localStorage.setItem("subscribedNews", JSON.stringify([...subscribedNews]));
 }
