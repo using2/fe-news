@@ -7,6 +7,22 @@ function shuffleArray(array) {
   return shuffled;
 }
 
+export async function loadHeadlineNewsData(jsonPath) {
+  try {
+    const response = await fetch(jsonPath);
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data;
+  } catch (error) {
+    console.error("헤드라인 뉴스 데이터 로드 실패:", error);
+    return [];
+  }
+}
+
 export async function loadNewsData(jsonPath) {
   try {
     const response = await fetch(jsonPath);
