@@ -98,6 +98,8 @@ class HeadlineSlider {
       if (elapsedTime >= 5000) {
         this.handleRolling();
         this.animationStartTime = 0;
+        this.isDelayPhase = true;
+        this.delayStartTime = 0;
       }
 
       this.animationId = requestAnimationFrame(animate);
