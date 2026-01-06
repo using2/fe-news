@@ -1,3 +1,5 @@
+import { PAGINATION } from "../../constants/constants";
+
 function shuffleArray(array) {
   const shuffled = [...array];
   for (let i = shuffled.length - 1; i > 0; i--) {
@@ -39,7 +41,7 @@ export async function loadNewsData(jsonPath) {
   }
 }
 
-export function paginateNews(newsData, pageSize = 24) {
+export function paginateNews(newsData, pageSize = PAGINATION.GRID_PAGE_SIZE) {
   const shuffled = shuffleArray(newsData);
   const pages = [];
 

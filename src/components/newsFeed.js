@@ -11,6 +11,7 @@ import setupSubscribe, {
   saveSubscribedNews,
 } from "../setup/setupSubscribe.js";
 import { loadNewsData, paginateNews } from "../utils/newsDataManager.js";
+import { PAGINATION } from "../../constants/constants.js";
 
 let allNewsData = [];
 let paginatedData = [];
@@ -51,7 +52,7 @@ export async function initNewsFeed(container) {
 
 async function loadInitialData() {
   allNewsData = await loadNewsData("/pressData.json");
-  paginatedData = paginateNews(allNewsData, 24);
+  paginatedData = paginateNews(allNewsData, PAGINATION.GRID_PAGE_SIZE);
 }
 
 function setupAllEventListeners() {
@@ -66,7 +67,7 @@ function handleFilterChange(newFilter) {
   currentPage = 0;
 
   const filteredData = getFilteredData(currentFilter);
-  paginatedData = paginateNews(filteredData, 24);
+  paginatedData = paginateNews(filteredData, PAGINATION.GRID_PAGE_SIZE);
 
   renderCurrentPage();
   updateAllUI();
@@ -160,10 +161,13 @@ function repaginateForFavorites() {
     (item) => item && subscribedNews.has(item.press)
   );
 
-  const pageSize = 24;
   paginatedData = Array.from(
-    { length: Math.ceil(filteredItems.length / pageSize) },
-    (_, i) => filteredItems.slice(i * pageSize, (i + 1) * pageSize)
+    { length: Math.ceil(filteredItems.length / PAGINATION.GRID_PAGE_SIZE) },
+    (_, i) =>
+      filteredItems.slice(
+        i * PAGINATION.GRID_PAGE_SIZE,
+        (i + 1) * PAGINATION.GRID_PAGE_SIZE
+      )
   );
 
   if (currentPage >= paginatedData.length && paginatedData.length > 0) {

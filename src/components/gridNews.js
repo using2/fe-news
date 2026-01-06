@@ -1,16 +1,17 @@
 import pagination, { nextButton } from "./pagination.js";
 import "../style/gridNews.css";
+import { PAGINATION } from "../../constants/constants.js";
 
 export default function gridNews(
   newsItems = [],
   subscribedNews = new Set(),
   currentFilter = "all"
 ) {
-  const totalCells = 24;
-
   const paddedNews = [
     ...newsItems,
-    ...Array(Math.max(0, totalCells - newsItems.length)).fill(null),
+    ...Array(Math.max(0, PAGINATION.GRID_PAGE_SIZE - newsItems.length)).fill(
+      null
+    ),
   ];
 
   return /* html */ `
