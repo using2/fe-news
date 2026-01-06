@@ -10,26 +10,42 @@ import setupSubscribe, {
   loadSubscribedNews,
   saveSubscribedNews,
 } from "../setup/setupSubscribe.js";
-import { loadNewsData, paginateNews } from "../utils/newsDataManager.js";
+import {
+  loadNewsData,
+  paginateForGrid,
+  shuffleArray,
+} from "../utils/newsDataManager.js";
+import { PAGINATION } from "../constants/constants.js";
 
 let allNewsData = [];
-let paginatedData = [];
 let currentFilter = "all";
 let currentView = "grid";
 let subscribedNews = new Set();
-let currentPage = 0;
+
+let gridState = {
+  paginatedData: [],
+  currentPage: 0,
+  pageSize: PAGINATION.GRID_PAGE_SIZE,
+};
+
+let listState = {
+  currentCategory: "종합/경제",
+  categorizedData: {},
+  currentPressIndex: 0,
+  categories: [],
+};
 
 let cachedDOM = {
   container: null,
   filterContainer: null,
-  gridContainer: null,
+  contentContainer: null,
 };
 
 export default function newsFeed() {
   return /* html */ `
     <div class="news-feed-container">
       ${newsFilter("all", "grid", 0)}
-      <div id="grid-container">
+      <div id="content-container">
         ${gridNews([], subscribedNews, currentFilter)}
       </div>
     </div>
@@ -42,16 +58,18 @@ export async function initNewsFeed(container) {
 
   cachedDOM.container = container;
   cachedDOM.filterContainer = container.querySelector(".news-filter-container");
-  cachedDOM.gridContainer = container.querySelector("#grid-container");
+  cachedDOM.contentContainer = container.querySelector("#content-container");
 
-  renderCurrentPage();
+  renderCurrentView();
   setupAllEventListeners();
   updateAllUI();
 }
 
 async function loadInitialData() {
   allNewsData = await loadNewsData("/pressData.json");
-  paginatedData = paginateNews(allNewsData, 24);
+  const filteredData = getFilteredData(currentFilter);
+  gridState.paginatedData = paginateForGrid(filteredData, gridState.pageSize);
+  gridState.currentPage = 0;
 }
 
 function setupAllEventListeners() {
@@ -63,63 +81,301 @@ function setupAllEventListeners() {
 
 function handleFilterChange(newFilter) {
   currentFilter = newFilter;
-  currentPage = 0;
 
-  const filteredData = getFilteredData(currentFilter);
-  paginatedData = paginateNews(filteredData, 24);
+  if (currentView === "grid") {
+    gridState.currentPage = 0;
+    const filteredData = getFilteredData(currentFilter);
+    gridState.paginatedData = paginateForGrid(filteredData, gridState.pageSize);
+  } else {
+    handleViewChange("grid");
+    return;
+  }
 
-  renderCurrentPage();
+  renderCurrentView();
   updateAllUI();
 }
 
 function handleViewChange(newView) {
+  const previousView = currentView;
   currentView = newView;
 
-  renderCurrentPage();
-  updateViewUI(cachedDOM.filterContainer, currentView);
-  updatePaginationArrowsVisibility();
-}
-
-function handlePageChange(direction) {
-  const newPage = direction === "prev" ? currentPage - 1 : currentPage + 1;
-
-  if (newPage >= 0 && newPage < paginatedData.length) {
-    currentPage = newPage;
-    renderCurrentPage();
-    updatePaginationUI(cachedDOM.container, currentPage, paginatedData.length);
-  }
-}
-
-function handleSubscribeChange(press, filter) {
-  if (subscribedNews.has(press)) {
-    subscribedNews.delete(press);
-  } else {
-    subscribedNews.add(press);
+  if (newView === "list" && previousView === "grid") {
+    initializeListView();
+  } else if (newView === "grid" && previousView === "list") {
+    resetListState();
   }
 
-  saveSubscribedNews(subscribedNews);
-
-  if (filter === "favorite") {
-    repaginateForFavorites();
-  }
-
-  renderCurrentPage();
+  renderCurrentView();
   updateAllUI();
 }
 
-function renderCurrentPage() {
-  const pageData = paginatedData[currentPage] || [];
+function handlePageChange(direction) {
+  if (currentView === "grid") {
+    handleGridPageChange(direction);
+  } else {
+    handleListPageChange(direction);
+  }
+}
+
+async function handleSubscribeChange(press, filter) {
+  const button = cachedDOM.container.querySelector(
+    `.subscribe-btn-inline[data-press="${press}"]`
+  );
+
+  if (!button) return;
+
+  const wasSubscribed = subscribedNews.has(press);
+
+  if (!wasSubscribed) {
+    button.disabled = true;
+    button.classList.add("loading");
+    const originalText = button.textContent;
+    button.innerHTML = `
+      <svg class="loading-spinner" width="14" height="14" viewBox="0 0 14 14" fill="none">
+        <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="25 25" />
+      </svg>
+    `;
+
+    subscribedNews.add(press);
+    saveSubscribedNews(subscribedNews);
+
+    await new Promise((resolve) => setTimeout(resolve, 500));
+
+    currentFilter = "favorite";
+    currentView = "list";
+
+    const filteredData = getFilteredData(currentFilter);
+    gridState.paginatedData = paginateForGrid(filteredData, gridState.pageSize);
+    gridState.currentPage = 0;
+
+    initializeListView();
+
+    renderCurrentView();
+    updateAllUI();
+  } else {
+    subscribedNews.delete(press);
+    saveSubscribedNews(subscribedNews);
+
+    if (filter === "favorite") {
+      repaginateForFavorites();
+    }
+
+    renderCurrentView();
+    updateAllUI();
+  }
+}
+
+function handleGridPageChange(direction) {
+  const newPage =
+    direction === "prev"
+      ? gridState.currentPage - 1
+      : gridState.currentPage + 1;
+
+  if (newPage >= 0 && newPage < gridState.paginatedData.length) {
+    gridState.currentPage = newPage;
+    renderCurrentView();
+    updatePaginationUI(
+      cachedDOM.container,
+      gridState.currentPage,
+      gridState.paginatedData.length
+    );
+  }
+}
+
+function repaginateForFavorites() {
+  if (currentView !== "grid") return;
+
+  const allItems = gridState.paginatedData.flat();
+  const filteredItems = allItems.filter(
+    (item) => item && subscribedNews.has(item.press)
+  );
+
+  gridState.paginatedData = Array.from(
+    { length: Math.ceil(filteredItems.length / gridState.pageSize) },
+    (_, i) =>
+      filteredItems.slice(i * gridState.pageSize, (i + 1) * gridState.pageSize)
+  );
+
+  if (
+    gridState.currentPage >= gridState.paginatedData.length &&
+    gridState.paginatedData.length > 0
+  ) {
+    gridState.currentPage = gridState.paginatedData.length - 1;
+  }
+}
+
+function initializeListView() {
+  listState.categorizedData = categorizePressData(allNewsData);
+  listState.categories = Object.keys(listState.categorizedData);
+
+  if (listState.categories.length > 0) {
+    listState.currentCategory = listState.categories[0];
+    listState.currentPressIndex = 0;
+  }
+}
+
+function categorizePressData(newsData) {
+  const categorized = {};
+
+  newsData.forEach((press) => {
+    const category = press.category || "기타";
+    if (!categorized[category]) {
+      categorized[category] = [];
+    }
+    categorized[category].push(press);
+  });
+
+  Object.keys(categorized).forEach((category) => {
+    categorized[category] = shuffleArray(categorized[category]);
+  });
+
+  return categorized;
+}
+
+function getCurrentPress() {
+  const categoryData =
+    listState.categorizedData[listState.currentCategory] || [];
+  return categoryData[listState.currentPressIndex] || null;
+}
+
+function getTotalPressInCategory() {
+  const categoryData =
+    listState.categorizedData[listState.currentCategory] || [];
+  return categoryData.length;
+}
+
+function handleListPageChange(direction) {
+  const categoryData =
+    listState.categorizedData[listState.currentCategory] || [];
+  const totalInCategory = categoryData.length;
+
+  if (direction === "next") {
+    if (listState.currentPressIndex < totalInCategory - 1) {
+      listState.currentPressIndex++;
+    } else {
+      const currentCategoryIdx = listState.categories.indexOf(
+        listState.currentCategory
+      );
+      if (currentCategoryIdx < listState.categories.length - 1) {
+        listState.currentCategory =
+          listState.categories[currentCategoryIdx + 1];
+        listState.currentPressIndex = 0;
+      } else {
+        listState.currentCategory = listState.categories[0];
+        listState.currentPressIndex = 0;
+      }
+    }
+  } else {
+    if (listState.currentPressIndex > 0) {
+      listState.currentPressIndex--;
+    } else {
+      const currentCategoryIdx = listState.categories.indexOf(
+        listState.currentCategory
+      );
+      if (currentCategoryIdx > 0) {
+        listState.currentCategory =
+          listState.categories[currentCategoryIdx - 1];
+        const prevCategoryData =
+          listState.categorizedData[listState.currentCategory] || [];
+        listState.currentPressIndex = prevCategoryData.length - 1;
+      } else {
+        listState.currentCategory =
+          listState.categories[listState.categories.length - 1];
+        const lastCategoryData =
+          listState.categorizedData[listState.currentCategory] || [];
+        listState.currentPressIndex = lastCategoryData.length - 1;
+      }
+    }
+  }
+
+  renderCurrentView();
+  updatePaginationState();
+}
+
+function handleCategoryChange(newCategory) {
+  if (listState.categorizedData[newCategory]) {
+    listState.currentCategory = newCategory;
+    listState.currentPressIndex = 0;
+    renderCurrentView();
+    updatePaginationState();
+  }
+}
+
+function resetListState() {
+  listState.currentCategory = "";
+  listState.categorizedData = {};
+  listState.currentPressIndex = 0;
+  listState.categories = [];
+}
+
+function renderCurrentView() {
+  if (currentView === "grid") {
+    renderGridView();
+  } else {
+    renderListView();
+  }
+}
+
+function renderGridView() {
+  const pageData = gridState.paginatedData[gridState.currentPage] || [];
   const validNewsData = Array.isArray(pageData) ? pageData : [];
 
-  cachedDOM.gridContainer.innerHTML =
-    currentView === "grid"
-      ? gridNews(validNewsData, subscribedNews, currentFilter)
-      : listNews(validNewsData, subscribedNews, currentFilter);
+  cachedDOM.contentContainer.innerHTML = gridNews(
+    validNewsData,
+    subscribedNews,
+    currentFilter
+  );
+}
+
+function renderListView() {
+  const currentPress = getCurrentPress();
+  const totalInCategory = getTotalPressInCategory();
+  const currentPosition = listState.currentPressIndex + 1;
+
+  cachedDOM.contentContainer.innerHTML = listNews(
+    currentPress,
+    listState.currentCategory,
+    listState.categories,
+    currentPosition,
+    totalInCategory,
+    subscribedNews
+  );
+
+  setupCategoryChange();
+
+  setTimeout(() => {
+    const prevArrow = cachedDOM.container.querySelector(
+      ".pagination-arrow.prev"
+    );
+    const nextArrow = cachedDOM.container.querySelector(
+      ".pagination-arrow.next"
+    );
+
+    if (prevArrow && nextArrow) {
+      const isFirstCategoryFirstPress =
+        listState.categories.indexOf(listState.currentCategory) === 0 &&
+        listState.currentPressIndex === 0;
+
+      if (isFirstCategoryFirstPress) {
+        prevArrow.classList.add("hidden");
+        prevArrow.disabled = true;
+        prevArrow.style.visibility = "hidden";
+      } else {
+        prevArrow.classList.remove("hidden");
+        prevArrow.disabled = false;
+        prevArrow.style.visibility = "visible";
+      }
+
+      nextArrow.classList.remove("hidden");
+      nextArrow.disabled = false;
+      nextArrow.style.visibility = "visible";
+    }
+  }, 0);
 }
 
 function updateAllUI() {
   updateFilterBar();
-  updatePaginationUI(cachedDOM.container, currentPage, paginatedData.length);
+  updatePaginationState();
   updatePaginationArrowsVisibility();
 }
 
@@ -144,31 +400,67 @@ function updateFilterBar() {
   updateViewUI(cachedDOM.filterContainer, currentView);
 }
 
+function updatePaginationState() {
+  if (currentView === "grid") {
+    const currentPage = gridState.currentPage;
+    const totalPages = gridState.paginatedData.length;
+    updatePaginationUI(cachedDOM.container, currentPage, totalPages);
+  } else {
+    const currentPage = listState.currentPressIndex;
+    const totalPages = getTotalPressInCategory();
+
+    updatePaginationUI(cachedDOM.container, currentPage, totalPages);
+
+    const prevArrow = cachedDOM.container.querySelector(
+      ".pagination-arrow.prev"
+    );
+    const nextArrow = cachedDOM.container.querySelector(
+      ".pagination-arrow.next"
+    );
+
+    if (prevArrow && nextArrow) {
+      const isFirstCategoryFirstPress =
+        listState.categories.indexOf(listState.currentCategory) === 0 &&
+        listState.currentPressIndex === 0;
+
+      if (isFirstCategoryFirstPress) {
+        prevArrow.classList.add("hidden");
+        prevArrow.disabled = true;
+        prevArrow.style.visibility = "hidden";
+      } else {
+        prevArrow.classList.remove("hidden");
+        prevArrow.disabled = false;
+        prevArrow.style.visibility = "visible";
+      }
+
+      nextArrow.classList.remove("hidden");
+      nextArrow.disabled = false;
+      nextArrow.style.visibility = "visible";
+    }
+  }
+}
+
 function updatePaginationArrowsVisibility() {
   const paginationArrows =
     cachedDOM.container.querySelectorAll(".pagination-arrow");
-  const displayValue = currentView === "grid" ? "flex" : "none";
 
   paginationArrows.forEach((arrow) => {
-    arrow.style.display = displayValue;
+    arrow.style.display = "flex";
   });
 }
 
-function repaginateForFavorites() {
-  const allItems = paginatedData.flat();
-  const filteredItems = allItems.filter(
-    (item) => item && subscribedNews.has(item.press)
-  );
+function setupCategoryChange() {
+  const categoryButtons =
+    cachedDOM.contentContainer.querySelectorAll(".category-tab");
 
-  const pageSize = 24;
-  paginatedData = Array.from(
-    { length: Math.ceil(filteredItems.length / pageSize) },
-    (_, i) => filteredItems.slice(i * pageSize, (i + 1) * pageSize)
-  );
-
-  if (currentPage >= paginatedData.length && paginatedData.length > 0) {
-    currentPage = paginatedData.length - 1;
-  }
+  categoryButtons.forEach((button) => {
+    button.addEventListener("click", (e) => {
+      const category = e.target.dataset.category;
+      if (category) {
+        handleCategoryChange(category);
+      }
+    });
+  });
 }
 
 function getFilteredData(filter) {

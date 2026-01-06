@@ -10,11 +10,8 @@ export default function setupViewToggle(container, onViewChange) {
 
 export function updateViewUI(container, activeView) {
   container.querySelectorAll(".view-btn").forEach((btn) => {
-    btn.classList.remove("active");
-    btn.setAttribute("aria-pressed", "false");
+    const isActive = btn.dataset.view === activeView;
+    btn.classList.toggle("active", isActive);
+    btn.setAttribute("aria-pressed", isActive.toString());
   });
-
-  const activeBtn = container.querySelector(`[data-view="${activeView}"]`);
-  activeBtn?.classList.add("active");
-  activeBtn?.setAttribute("aria-pressed", "true");
 }

@@ -1,3 +1,4 @@
+import { ANIMATION } from "../constants/constants";
 import { loadHeadlineNewsData } from "../utils/newsDataManager";
 
 class HeadlineSlider {
@@ -95,7 +96,7 @@ class HeadlineSlider {
 
       const elapsedTime = timeStamp - this.animationStartTime;
 
-      if (elapsedTime >= 5000) {
+      if (elapsedTime >= ANIMATION.HEADLINE_INTERVAL) {
         this.handleRolling();
         this.animationStartTime = 0;
         this.isDelayPhase = true;
@@ -125,7 +126,7 @@ class HeadlineSlider {
         this.createHeadlineItem(this.allNewsData[afterNextIdx]);
 
       this.currentIdx = nextIdx;
-    }, 500);
+    }, ANIMATION.HEADLINE_TRANSITION);
   }
 
   getHTML() {
