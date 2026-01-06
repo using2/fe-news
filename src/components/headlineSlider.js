@@ -1,4 +1,4 @@
-import { ANIMATION, RECENT_NEWS } from "../../constants/constants";
+import { ANIMATION, RECENT_NEWS } from "../constants/constants";
 import "../style/headelineSlider.css";
 import rollingSection from "./rollingSection";
 

@@ -1,4 +1,4 @@
-import { PAGINATION } from "../../constants/constants";
+import { PAGINATION } from "../constants/constants";
 
 function shuffleArray(array) {
   const shuffled = [...array];

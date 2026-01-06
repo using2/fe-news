@@ -11,7 +11,7 @@ import setupSubscribe, {
   saveSubscribedNews,
 } from "../setup/setupSubscribe.js";
 import { loadNewsData, paginateNews } from "../utils/newsDataManager.js";
-import { PAGINATION } from "../../constants/constants.js";
+import { PAGINATION } from "../constants/constants.js";
 
 let allNewsData = [];
 let paginatedData = [];

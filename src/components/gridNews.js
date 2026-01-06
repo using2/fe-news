@@ -1,6 +1,6 @@
 import pagination, { nextButton } from "./pagination.js";
 import "../style/gridNews.css";
-import { PAGINATION } from "../../constants/constants.js";
+import { PAGINATION } from "../constants/constants.js";
 
 const SUBSCRIBE_BUTTON_TEXT = {
   subscribe: "구독하기",

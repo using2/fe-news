@@ -1,4 +1,4 @@
-import { ANIMATION } from "../../constants/constants";
+import { ANIMATION } from "../constants/constants";
 import { loadHeadlineNewsData } from "../utils/newsDataManager";
 
 class HeadlineSlider {
