@@ -10,9 +10,7 @@ export default function setupFilter(element, onFilterChange) {
 
 export function updateFilterUI(element, activeFilter) {
   element.querySelectorAll(".filter-btn").forEach((btn) => {
-    btn.classList.remove("active");
+    const isActive = btn.dataset.filter === activeFilter;
+    btn.classList.toggle("active", isActive);
   });
-
-  const activeBtn = element.querySelector(`[data-filter="${activeFilter}"]`);
-  activeBtn?.classList.add("active");
 }
