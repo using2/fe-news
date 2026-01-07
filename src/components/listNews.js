@@ -134,7 +134,11 @@ function createPressHeader(pressData, isSubscribed) {
 
   return /* html */ `
     <div class="press-header-inline">
-      <h2 class="press-name">${pressData.press}</h2>
+      <a href="${
+        pressData.mainLink
+      }" target="_blank" rel="noopener" class="press-name">
+        <img src="${pressData.logo}" alt="${pressData.press}">
+      </a>
       <time class="press-time">${pressData.time || ""}</time>
       ${subscribeIcon}
     </div>
