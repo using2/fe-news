@@ -20,12 +20,6 @@ export default function listNews(
 
   return /* html */ `
     <section class="list-news-section">
-      ${createCategoryTabs(
-        allCategories,
-        currentCategory,
-        currentPosition,
-        totalInCategory
-      )}
       <div class="list-pagination-wrapper">
         <button class="pagination-arrow prev" aria-label="이전 언론사">
           <svg width="56" height="100%" viewBox="0 0 56 100" fill="none">
@@ -33,7 +27,15 @@ export default function listNews(
           </svg>
         </button>
         
-        ${createPressContent(pressData, subscribedNews)}
+        <div class="list-content-container">
+          ${createCategoryTabs(
+            allCategories,
+            currentCategory,
+            currentPosition,
+            totalInCategory
+          )}
+          ${createPressContent(pressData, subscribedNews)}
+        </div>
         
         <button class="pagination-arrow next" aria-label="다음 언론사">
           <svg width="56" height="100%" viewBox="0 0 56 100" fill="none">
@@ -54,9 +56,6 @@ function createCategoryTabs(
   const tabs = categories
     .map((category) => {
       const isActive = category === activeCategory;
-      const displayText = isActive
-        ? `${category}\n${currentPosition} / ${total}`
-        : category;
 
       return /* html */ `
       <button 
@@ -115,22 +114,14 @@ function createPressContent(pressData, subscribedNews) {
 
 function createPressHeader(pressData, isSubscribed) {
   const subscribeIcon = isSubscribed
-    ? /* html */ `
+    ? `
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
       <rect x="0.5" y="0.5" width="23" height="23" rx="11.5" fill="white"/>
       <rect x="0.5" y="0.5" width="23" height="23" rx="11.5" stroke="#D2DAE0"/>
       <path d="M9.6 15L9 14.4L11.4 12L9 9.6L9.6 9L12 11.4L14.4 9L15 9.6L12.6 12L15 14.4L14.4 15L12 12.6L9.6 15Z" fill="#879298"/>
     </svg>
   `
-    : /* html */ `
-    <button 
-        class="subscribe-btn-inline"
-        data-press="${pressData.press}"
-        data-logo="${pressData.logo}"
-      >
-        + 구독하기
-      </button>
-  `;
+    : "+ ";
 
   return /* html */ `
     <div class="press-header-inline">
@@ -140,7 +131,13 @@ function createPressHeader(pressData, isSubscribed) {
         <img src="${pressData.logo}" alt="${pressData.press}">
       </a>
       <time class="press-time">${pressData.time || ""}</time>
-      ${subscribeIcon}
+      <button 
+        class="subscribe-btn-inline ${isSubscribed ? "subscribed" : ""}"
+        data-press="${pressData.press}"
+        data-logo="${pressData.logo}"
+      >
+        ${subscribeIcon}구독하기
+      </button>
     </div>
   `;
 }

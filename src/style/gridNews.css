@@ -1,10 +1,10 @@
 .grid-pagination-wrapper {
   display: flex;
   align-items: center;
-  gap: 1.25rem;
-  max-width: 80%;     
-  margin: 0 auto 1.5rem;   
-  padding: 0 2rem;        
+  gap: 1.5rem;
+  max-width: 80%;
+  margin: 0 auto 2rem;
+  padding: 0 2rem;
 }
 
 /* Grid News Section */
@@ -22,10 +22,13 @@
   width: 100%;
   gap: 0;
   list-style: none;
-  border: 0.0625rem solid #e0e0e0;
+  border: 1px solid #d2dae0;
   background: #fff;
   padding: 0;
   margin: 0;
+  border-radius: 6px;
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.05);
 }
 
 /* News Card */
@@ -34,13 +37,13 @@
   display: flex;
   justify-content: center;
   align-items: center;
-  aspect-ratio: 1.6;       /* 비율 고정 */
+  aspect-ratio: 1.6;
   padding: 1.25rem;
   background: #fff;
-  border-right: 0.0625rem solid #e0e0e0;
-  border-bottom: 0.0625rem solid #e0e0e0;
+  border-right: 1px solid #e9ecef;
+  border-bottom: 1px solid #e9ecef;
   overflow: hidden;
-  transition: background 0.2s;
+  transition: all 0.2s ease;
 }
 
 /* 마지막 열 오른쪽 테두리 제거 */
@@ -55,7 +58,7 @@
 
 /* Hover 효과 */
 .news-card.has-content:hover {
-  background: #fafafa;
+  background: #f8f9fa;
 }
 
 /* News Link */
@@ -65,7 +68,7 @@
   justify-content: center;
   width: 100%;
   height: 100%;
-  transition: opacity 0.2s;
+  transition: opacity 0.2s ease;
 }
 
 .news-card.has-content:hover .news-link {
@@ -74,9 +77,11 @@
 
 /* Logo Image */
 .logo-grid img {
-  max-width: 55%;
+  max-width: 60%;
   max-height: 4rem;
   object-fit: contain;
+  filter: grayscale(0%);
+  transition: filter 0.2s ease;
 }
 
 /* Subscribe Button */
@@ -85,29 +90,30 @@
   top: 50%;
   left: 50%;
   transform: translate(-50%, -50%);
-  padding: 0.4rem 0.8rem;
-  border: 0.125rem solid #b8bcc4;
-  border-radius: 2rem;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid #d2dae0;
+  border-radius: 1.5rem;
   background: #fff;
-  color: #6b7280;
-  font-size: 0.75rem;
-  font-weight: 500;
+  color: #374151;
+  font-size: 0.8125rem;
+  font-weight: 600;
   cursor: pointer;
   opacity: 0;
   visibility: hidden;
-  transition: all 0.2s;
+  transition: all 0.2s ease;
   z-index: 10;
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 0.5rem;
-  letter-spacing: 0.03125rem;
+  gap: 0.375rem;
+  letter-spacing: -0.01em;
 }
 
 .subscribe-btn::before {
   content: '+';
-  font-size: 1rem;
-  font-weight: 400;
+  font-size: 1.125rem;
+  font-weight: 500;
+  line-height: 1;
 }
 
 .news-card.has-content:hover .subscribe-btn {
@@ -116,24 +122,30 @@
 }
 
 .subscribe-btn.subscribed {
-  border-color: #d0d0d0;
-  background: #fff;
-  color: #666;
+  border-color: #7890E7;
+  background: rgba(120, 144, 231, 0.08);
+  color: #7890E7;
 }
 
 .subscribe-btn.subscribed::before {
   content: '−';
-  font-size: 1rem;
+  font-size: 1.25rem;
+  font-weight: 500;
 }
 
 /* Responsive */
 @media (max-width: 75rem) {
+  .grid-pagination-wrapper {
+    max-width: 85%;
+    gap: 1.25rem;
+  }
+
   .logo-grid {
     grid-template-columns: repeat(4, 1fr);
   }
   
   .news-card:nth-child(6n) {
-    border-right: 0.0625rem solid #e0e0e0;
+    border-right: 1px solid #e9ecef;
   }
   
   .news-card:nth-child(4n) {
@@ -141,7 +153,7 @@
   }
   
   .news-card:nth-child(n + 19) {
-    border-bottom: 0.0625rem solid #e0e0e0;
+    border-bottom: 1px solid #e9ecef;
   }
   
   .news-card:nth-child(n + 13) {
@@ -150,34 +162,71 @@
 }
 
 @media (max-width: 48rem) {
+  .grid-pagination-wrapper {
+    max-width: 92%;
+    gap: 1rem;
+    padding: 0 1rem;
+    margin-bottom: 1.5rem;
+  }
+
   .logo-grid {
     grid-template-columns: repeat(3, 1fr);
+    border-radius: 4px;
+  }
+  
+  .news-card {
+    padding: 1rem;
   }
   
   .news-card:nth-child(4n) {
-    border-right: 0.0625rem solid #e0e0e0;
+    border-right: 1px solid #e9ecef;
   }
   
   .news-card:nth-child(3n) {
     border-right: none;
   }
   
-  .grid-pagination-wrapper {
-    gap: 0.75rem;
-    padding: 0 1rem;
+  .logo-grid img {
+    max-width: 65%;
+  }
+  
+  .subscribe-btn {
+    font-size: 0.75rem;
+    padding: 0.4rem 0.875rem;
   }
 }
 
 @media (max-width: 30rem) {
+  .grid-pagination-wrapper {
+    max-width: 100%;
+    gap: 0.75rem;
+    padding: 0 0.5rem;
+    margin-bottom: 1.25rem;
+  }
+
   .logo-grid {
     grid-template-columns: repeat(2, 1fr);
   }
   
+  .news-card {
+    padding: 0.875rem;
+  }
+  
   .news-card:nth-child(3n) {
-    border-right: 0.0625rem solid #e0e0e0;
+    border-right: 1px solid #e9ecef;
   }
   
   .news-card:nth-child(2n) {
     border-right: none;
+  }
+  
+  .logo-grid img {
+    max-width: 70%;
+    max-height: 3.5rem;
+  }
+  
+  .subscribe-btn {
+    font-size: 0.6875rem;
+    padding: 0.375rem 0.75rem;
   }
 }
