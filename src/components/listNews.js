@@ -54,6 +54,7 @@ function createCategoryTabs(
       <button 
         class="category-tab ${isActive ? "active" : ""}"
         data-category="${category}"
+        ${isActive ? "data-progress-tab" : ""}
       >
         ${
           isActive
