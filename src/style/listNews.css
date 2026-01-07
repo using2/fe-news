@@ -134,20 +134,23 @@
 .press-header-inline {
   display: flex;
   align-items: center;
-  gap: 0.75rem;
+  gap: 1rem;
   flex-wrap: wrap;
 }
 
 .press-name {
-  font-size: 1.125rem;
-  font-weight: 700;
-  color: #000;
-  margin: 0;
+  display: inline-block;
+  height: 1.5rem; 
+}
+
+.press-name img {
+  height: 100%;
 }
 
 .press-time {
   font-size: 0.8125rem;
   color: #8b95a1;
+  line-height: normal;
 }
 
 .subscribe-btn-inline {
