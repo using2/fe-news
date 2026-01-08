@@ -243,8 +243,6 @@ function handleUnsubscribeInListView(unsubscribedPress) {
 }
 
 function handleUnsubscribeInGridView() {
-  if (currentView !== VIEW_TYPE.GRID) return;
-
   const allItems = gridState.paginatedData.flat();
   const filteredItems = allItems.filter(
     (item) => item && subscribedNews.has(item.press)
