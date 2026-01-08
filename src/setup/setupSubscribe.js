@@ -1,6 +1,9 @@
 export default function setupSubscribe(container, onSubscribeChange) {
   container.addEventListener("click", (e) => {
-    const subscribeBtn = e.target.closest(".subscribe-btn");
+    const subscribeBtn =
+      e.target.closest(".subscribe-btn") ||
+      e.target.closest(".subscribe-btn-inline") ||
+      e.target.closest(".subscribe-icon");
 
     if (subscribeBtn) {
       e.preventDefault();
