@@ -196,8 +196,14 @@
 .press-header-inline {
   display: flex;
   align-items: center;
+  justify-content: space-between;
+  flex-wrap: nowrap;
+}
+
+.press-header-inline div {
+  display: flex;
+  align-items: center;
   gap: 1rem;
-  flex-wrap: wrap;
 }
 
 .press-name {
@@ -216,33 +222,29 @@
   line-height: normal;
 }
 
-.subscribe-btn-inline {
-  margin-left: 0.5rem;
-  padding: 0.375rem 0.875rem;
-  border: 1px solid #dae1e7;
-  border-radius: 1rem;
+.subscribe-btn {
+  top: 50%;
+  left: 50%;
+  padding: 0.5rem 1rem;
+  border: 1.5px solid #D2DAE0;
+  border-radius: 1.5rem;
   background: #fff;
-  color: #505050;
+  color: #879298;
   font-size: 0.8125rem;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  z-index: 10;
   white-space: nowrap;
   display: flex;
   align-items: center;
-  gap: 0.25rem;
+  letter-spacing: -0.01em;
 }
 
-.subscribe-btn-inline svg {
-  flex-shrink: 0;
+.subscribe-icon {
+  cursor: pointer;
 }
 
-.subscribe-btn-inline:hover:not(:disabled) {
-  border-color: #505050;
-  background: #f7f9fa;
-}
-
-.subscribe-btn-inline.loading {
+.subscribe-btn.loading {
   pointer-events: none;
   opacity: 0.7;
 }

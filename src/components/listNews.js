@@ -7,7 +7,8 @@ export default function listNews(
   allCategories = [],
   currentPosition = 1,
   totalInCategory = 1,
-  subscribedNews = new Set()
+  subscribedNews = new Set(),
+  currentFilter
 ) {
   if (!pressData) {
     return /* html */ `
@@ -29,9 +30,11 @@ export default function listNews(
             allCategories,
             currentCategory,
             currentPosition,
-            totalInCategory
+            totalInCategory,
+            subscribedNews,
+            pressData
           )}
-          ${createPressContent(pressData, subscribedNews)}
+          ${createPressContent(pressData, subscribedNews, currentFilter)}
         </div>
         
         ${nextButton()}
@@ -44,8 +47,12 @@ function createCategoryTabs(
   categories,
   activeCategory,
   currentPosition,
-  total
+  total,
+  subscribedNews,
+  pressData
 ) {
+  const isSubscribed = subscribedNews.has(pressData.press);
+
   const tabs = categories
     .map((category) => {
       const isActive = category === activeCategory;
@@ -61,7 +68,11 @@ function createCategoryTabs(
             ? `
           <div class="tab-content">
             <span class="tab-name">${category}</span>
-            <span class="tab-count">${currentPosition} / ${total}</span>
+            ${
+              isSubscribed
+                ? `>`
+                : `<span class="tab-count">${currentPosition} / ${total}</span>`
+            }
           </div>
         `
             : category
@@ -78,7 +89,7 @@ function createCategoryTabs(
   `;
 }
 
-function createPressContent(pressData, subscribedNews) {
+function createPressContent(pressData, subscribedNews, currentFilter) {
   const isSubscribed = subscribedNews.has(pressData.press);
   const mainArticle = {
     title: pressData.mainTitle,
@@ -91,7 +102,7 @@ function createPressContent(pressData, subscribedNews) {
     <div class="press-content-wrapper">
       <div class="press-content">
         <div class="press-main-section">
-          ${createPressHeader(pressData, isSubscribed)}
+          ${createPressHeader(pressData, isSubscribed, currentFilter)}
           ${createMainArticle(mainArticle)}
         </div>
         
@@ -106,32 +117,40 @@ function createPressContent(pressData, subscribedNews) {
   `;
 }
 
-function createPressHeader(pressData, isSubscribed) {
-  const subscribeIcon = isSubscribed
-    ? `
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <rect x="0.5" y="0.5" width="23" height="23" rx="11.5" fill="white"/>
-      <rect x="0.5" y="0.5" width="23" height="23" rx="11.5" stroke="#D2DAE0"/>
-      <path d="M9.6 15L9 14.4L11.4 12L9 9.6L9.6 9L12 11.4L14.4 9L15 9.6L12.6 12L15 14.4L14.4 15L12 12.6L9.6 15Z" fill="#879298"/>
-    </svg>
-  `
-    : "+ ";
-
+function createPressHeader(pressData, isSubscribed, currentFilter) {
   return /* html */ `
     <div class="press-header-inline">
-      <a href="${
-        pressData.mainLink
-      }" target="_blank" rel="noopener" class="press-name">
+      <div>
+        <a href="${
+          pressData.mainLink
+        }" target="_blank" rel="noopener" class="press-name">
         <img src="${pressData.logo}" alt="${pressData.press}">
       </a>
       <time class="press-time">${pressData.time || ""}</time>
-      <button 
-        class="subscribe-btn-inline ${isSubscribed ? "subscribed" : ""}"
+      </div>
+      ${
+        isSubscribed
+          ? /* html */ `
+          <svg 
+            class="subscribe-icon" 
+            data-press="${pressData.press}"
+            data-logo="${pressData.logo}"
+            data-filter="${currentFilter}"
+            width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+              <rect x="0.5" y="0.5" width="24" height="24" rx="11.5" fill="white"/>
+              <rect x="0.5" y="0.5" width="24" height="24" rx="11.5" stroke="#D2DAE0"/>
+              <path d="M9.6 15L9 14.4L11.4 12L9 9.6L9.6 9L12 11.4L14.4 9L15 9.6L12.6 12L15 14.4L14.4 15L12 12.6L9.6 15Z" fill="#879298"/>
+            </svg>
+          `
+          : /* html */ `<button 
+        class="subscribe-btn"
         data-press="${pressData.press}"
         data-logo="${pressData.logo}"
+        data-filter="${currentFilter}"
       >
-        ${subscribeIcon}구독하기
-      </button>
+        + 구독하기
+      </button>`
+      }
     </div>
   `;
 }
