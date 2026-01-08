@@ -15,3 +15,17 @@ export const RECENT_NEWS = {
   LEFT_NEWS_START: 0,
   RIGHT_NEWS_START: 5,
 };
+
+export const VIEW_TYPE = {
+  GRID: "grid",
+  LIST: "list",
+};
+
+export const AUTO_PAGE = {
+  DURATION: 20000, 
+  SETUP_DELAY: 100,
+};
+
+export const SUBSCRIBE = {
+  LOADING_DELAY: 500,
+};

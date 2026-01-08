@@ -1,4 +1,5 @@
 import { AutoPageTimer } from "../utils/autoPageTimer.js";
+import { AUTO_PAGE } from "../constants/constants.js";
 
 let autoPageTimer = null;
 let progressTabElement = null;
@@ -7,7 +8,11 @@ let isUserInteracting = false;
 const START_COLOR = "#7890E7";
 const END_COLOR = "#4362D0";
 
-export function setupAutoPage(container, onPageChange, duration = 20000) {
+export function setupAutoPage(
+  container,
+  onPageChange,
+  duration = AUTO_PAGE.DURATION
+) {
   if (autoPageTimer) {
     autoPageTimer.destroy();
     autoPageTimer = null;

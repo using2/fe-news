@@ -1,4 +1,5 @@
 import "../style/newsFilter.css";
+import { VIEW_TYPE } from "../constants/constants.js";
 
 const FILTERS = [
   { id: "all", label: "전체 언론사", count: null },
@@ -7,7 +8,7 @@ const FILTERS = [
 
 const VIEW_BUTTONS = [
   {
-    type: "list",
+    type: VIEW_TYPE.LIST,
     label: "리스트 보기",
     svg: `
       <rect x="2" y="3" width="16" height="2" fill="currentColor"/>
@@ -16,7 +17,7 @@ const VIEW_BUTTONS = [
     `,
   },
   {
-    type: "grid",
+    type: VIEW_TYPE.GRID,
     label: "그리드 보기",
     svg: `
       <rect x="2" y="2" width="6" height="6" fill="currentColor"/>

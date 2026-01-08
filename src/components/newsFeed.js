@@ -20,11 +20,16 @@ import {
   paginateForGrid,
   shuffleArray,
 } from "../utils/newsDataManager.js";
-import { PAGINATION } from "../constants/constants.js";
+import {
+  PAGINATION,
+  VIEW_TYPE,
+  AUTO_PAGE,
+  SUBSCRIBE,
+} from "../constants/constants.js";
 
 let allNewsData = [];
 let currentFilter = "all";
-let currentView = "grid";
+let currentView = VIEW_TYPE.GRID;
 let subscribedNews = new Set();
 
 let gridState = {
@@ -49,7 +54,7 @@ let cachedDOM = {
 export default function newsFeed() {
   return /* html */ `
     <div class="news-feed-container">
-      ${newsFilter("all", "grid", 0)}
+      ${newsFilter("all", VIEW_TYPE.GRID, 0)}
       <div id="content-container">
         ${gridNews([], subscribedNews, currentFilter)}
       </div>
@@ -87,12 +92,12 @@ function setupAllEventListeners() {
 function handleFilterChange(newFilter) {
   currentFilter = newFilter;
 
-  if (currentView === "grid") {
+  if (currentView === VIEW_TYPE.GRID) {
     gridState.currentPage = 0;
     const filteredData = getFilteredData(currentFilter);
     gridState.paginatedData = paginateForGrid(filteredData, gridState.pageSize);
   } else {
-    handleViewChange("grid");
+    handleViewChange(VIEW_TYPE.GRID);
     return;
   }
 
@@ -104,28 +109,28 @@ function handleViewChange(newView) {
   const previousView = currentView;
   currentView = newView;
 
-  if (previousView === "list") {
+  if (previousView === VIEW_TYPE.LIST) {
     cleanupAutoPage();
   }
 
-  if (newView === "list" && previousView === "grid") {
+  if (newView === VIEW_TYPE.LIST && previousView === VIEW_TYPE.GRID) {
     initializeListView();
-  } else if (newView === "grid" && previousView === "list") {
+  } else if (newView === VIEW_TYPE.GRID && previousView === VIEW_TYPE.LIST) {
     resetListState();
   }
 
   renderCurrentView();
   updateAllUI();
 
-  if (newView === "list") {
+  if (newView === VIEW_TYPE.LIST) {
     setTimeout(() => {
-      setupAutoPage(cachedDOM.container, handlePageChange, 20000);
-    }, 100);
+      setupAutoPage(cachedDOM.container, handlePageChange, AUTO_PAGE.DURATION);
+    }, AUTO_PAGE.SETUP_DELAY);
   }
 }
 
 function handlePageChange(direction) {
-  if (currentView === "grid") {
+  if (currentView === VIEW_TYPE.GRID) {
     handleGridPageChange(direction);
   } else {
     handleListPageChange(direction);
@@ -155,12 +160,14 @@ async function handleSubscribeChange(press, filter) {
     subscribedNews.add(press);
     saveSubscribedNews(subscribedNews);
 
-    await new Promise((resolve) => setTimeout(resolve, 500));
+    await new Promise((resolve) =>
+      setTimeout(resolve, SUBSCRIBE.LOADING_DELAY)
+    );
 
     cleanupAutoPage();
 
     currentFilter = "favorite";
-    currentView = "list";
+    currentView = VIEW_TYPE.LIST;
 
     const filteredData = getFilteredData(currentFilter);
     gridState.paginatedData = paginateForGrid(filteredData, gridState.pageSize);
@@ -172,8 +179,8 @@ async function handleSubscribeChange(press, filter) {
     updateAllUI();
 
     setTimeout(() => {
-      setupAutoPage(cachedDOM.container, handlePageChange, 20000);
-    }, 100);
+      setupAutoPage(cachedDOM.container, handlePageChange, AUTO_PAGE.DURATION);
+    }, AUTO_PAGE.SETUP_DELAY);
   } else {
     subscribedNews.delete(press);
     saveSubscribedNews(subscribedNews);
@@ -185,7 +192,7 @@ async function handleSubscribeChange(press, filter) {
     renderCurrentView();
     updateAllUI();
 
-    if (currentView === "list") {
+    if (currentView === VIEW_TYPE.LIST) {
       restartAutoPage();
     }
   }
@@ -209,7 +216,7 @@ function handleGridPageChange(direction) {
 }
 
 function repaginateForFavorites() {
-  if (currentView !== "grid") return;
+  if (currentView !== VIEW_TYPE.GRID) return;
 
   const allItems = gridState.paginatedData.flat();
   const filteredItems = allItems.filter(
@@ -337,7 +344,7 @@ function resetListState() {
 }
 
 function renderCurrentView() {
-  if (currentView === "grid") {
+  if (currentView === VIEW_TYPE.GRID) {
     renderGridView();
   } else {
     renderListView();
@@ -399,7 +406,7 @@ function renderListView() {
       nextArrow.style.visibility = "visible";
     }
 
-    setupAutoPage(cachedDOM.container, handlePageChange, 20000);
+    setupAutoPage(cachedDOM.container, handlePageChange, AUTO_PAGE.DURATION);
   }, 0);
 }
 
@@ -431,7 +438,7 @@ function updateFilterBar() {
 }
 
 function updatePaginationState() {
-  if (currentView === "grid") {
+  if (currentView === VIEW_TYPE.GRID) {
     const currentPage = gridState.currentPage;
     const totalPages = gridState.paginatedData.length;
     updatePaginationUI(cachedDOM.container, currentPage, totalPages);
