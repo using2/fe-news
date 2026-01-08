@@ -97,8 +97,7 @@ function handleFilterChange(newFilter) {
     const filteredData = getFilteredData(currentFilter);
     gridState.paginatedData = paginateForGrid(filteredData, gridState.pageSize);
   } else {
-    handleViewChange(VIEW_TYPE.GRID);
-    return;
+    initializeListView();
   }
 
   renderCurrentView();
@@ -139,9 +138,14 @@ function handlePageChange(direction) {
 }
 
 async function handleSubscribeChange(press, filter) {
-  const button = cachedDOM.container.querySelector(
-    `.subscribe-btn-inline[data-press="${press}"]`
-  );
+  const button =
+    cachedDOM.container.querySelector(
+      `.subscribe-btn-inline[data-press="${press}"]`
+    ) ||
+    cachedDOM.container.querySelector(
+      `.subscribe-btn[data-press="${press}"]`
+    ) ||
+    cachedDOM.container.querySelector(`.subscribe-icon[data-press="${press}"]`);
 
   if (!button) return;
 
@@ -150,12 +154,6 @@ async function handleSubscribeChange(press, filter) {
   if (!wasSubscribed) {
     button.disabled = true;
     button.classList.add("loading");
-    const originalText = button.textContent;
-    button.innerHTML = `
-      <svg class="loading-spinner" width="14" height="14" viewBox="0 0 14 14" fill="none">
-        <circle cx="7" cy="7" r="5" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-dasharray="25 25" />
-      </svg>
-    `;
 
     subscribedNews.add(press);
     saveSubscribedNews(subscribedNews);
@@ -186,7 +184,11 @@ async function handleSubscribeChange(press, filter) {
     saveSubscribedNews(subscribedNews);
 
     if (filter === "favorite") {
-      repaginateForFavorites();
+      if (currentView === VIEW_TYPE.LIST) {
+        handleUnsubscribeInListView(press);
+      } else {
+        handleUnsubscribeInGridView();
+      }
     }
 
     renderCurrentView();
@@ -215,7 +217,32 @@ function handleGridPageChange(direction) {
   }
 }
 
-function repaginateForFavorites() {
+function handleUnsubscribeInListView(unsubscribedPress) {
+  const isCurrentPress = listState.currentCategory === unsubscribedPress;
+
+  const currentCategoryIndex = listState.categories.indexOf(
+    listState.currentCategory
+  );
+
+  initializeListView();
+
+  if (isCurrentPress) {
+    if (currentCategoryIndex >= listState.categories.length) {
+      listState.currentCategory =
+        listState.categories[listState.categories.length - 1];
+    } else {
+      listState.currentCategory = listState.categories[currentCategoryIndex];
+    }
+    listState.currentPressIndex = 0;
+  } else {
+    if (!listState.categorizedData[listState.currentCategory]) {
+      listState.currentCategory = listState.categories[0];
+      listState.currentPressIndex = 0;
+    }
+  }
+}
+
+function handleUnsubscribeInGridView() {
   if (currentView !== VIEW_TYPE.GRID) return;
 
   const allItems = gridState.paginatedData.flat();
@@ -238,7 +265,12 @@ function repaginateForFavorites() {
 }
 
 function initializeListView() {
-  listState.categorizedData = categorizePressData(allNewsData);
+  if (currentFilter === "favorite") {
+    listState.categorizedData = categorizePressDataByPress(allNewsData);
+  } else {
+    listState.categorizedData = categorizePressData(allNewsData);
+  }
+
   listState.categories = Object.keys(listState.categorizedData);
 
   if (listState.categories.length > 0) {
@@ -260,6 +292,31 @@ function categorizePressData(newsData) {
 
   Object.keys(categorized).forEach((category) => {
     categorized[category] = shuffleArray(categorized[category]);
+  });
+
+  return categorized;
+}
+
+function categorizePressDataByPress(newsData) {
+  const categorized = {};
+
+  const subscribedPressData = newsData.filter((press) =>
+    subscribedNews.has(press.press)
+  );
+
+  const savedSubscriptions = localStorage.getItem("subscribedNews");
+  const subscriptionOrder = savedSubscriptions
+    ? JSON.parse(savedSubscriptions)
+    : [];
+
+  subscribedPressData.sort((a, b) => {
+    const indexA = subscriptionOrder.indexOf(a.press);
+    const indexB = subscriptionOrder.indexOf(b.press);
+    return indexA - indexB;
+  });
+
+  subscribedPressData.forEach((press) => {
+    categorized[press.press] = [press];
   });
 
   return categorized;
@@ -373,7 +430,8 @@ function renderListView() {
     listState.categories,
     currentPosition,
     totalInCategory,
-    subscribedNews
+    subscribedNews,
+    currentFilter
   );
 
   setupCategoryChange();
